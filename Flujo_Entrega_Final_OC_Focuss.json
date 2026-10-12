@@ -1,0 +1,2487 @@
+{
+  "name": "Entrega Final - OC automaticas desde Focuss",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## 1. Disparo\nLlega a Gmail un correo con asunto **FOCUSS** y el Excel adjunto. Configuracion guarda los datos fijos (sin datos quemados en los nodos) y la fecha de corte.",
+        "height": 500,
+        "width": 620,
+        "color": 7
+      },
+      "id": "00e76c52-e4fa-4d91-b5b5-061b071e6465",
+      "name": "Nota 0",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        9216,
+        1024
+      ]
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "simple": false,
+        "filters": {
+          "q": "subject:FOCUSS has:attachment newer_than:2d"
+        },
+        "options": {
+          "downloadAttachments": true
+        }
+      },
+      "id": "a2a22d7f-203f-4152-bef3-1c9146c9a4ba",
+      "name": "Gmail - Llega reporte Focuss",
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        9296,
+        1296
+      ],
+      "credentials": {
+        "gmailOAuth2": {
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e1267cba-91c5-4907-b866-9fb8f3ccb2a2",
+              "name": "correo_aprobador",
+              "value": "CORREO_APROBADOR@gmail.com",
+              "type": "string"
+            },
+            {
+              "id": "7eca00e5-437b-4d3b-8827-ac71ead48cad",
+              "name": "telegram_chat_id",
+              "value": "PEGAR_AQUI_CHAT_ID",
+              "type": "string"
+            },
+            {
+              "id": "95fd01b8-4adc-423b-bc87-4e0724db210a",
+              "name": "empresa",
+              "value": "TECNOAL - Area de Compras",
+              "type": "string"
+            },
+            {
+              "id": "b782fd67-76ff-40cf-b670-4f522e91480a",
+              "name": "iva",
+              "value": 0.19,
+              "type": "number"
+            },
+            {
+              "id": "46b398cf-b952-4f2d-a9e8-2723101ad26f",
+              "name": "dias_alerta_negro",
+              "value": 3,
+              "type": "number"
+            },
+            {
+              "id": "839383df-acf7-4fe3-a22b-29e3aba88512",
+              "name": "fecha_corte",
+              "value": "={{ ($json.subject ?? '').match(/\\d{4}-\\d{2}-\\d{2}/)?.[0] ?? ($binary.attachment_0?.fileName ?? '').match(/\\d{4}-\\d{2}-\\d{2}/)?.[0] ?? $now.setZone('America/Bogota').toFormat('yyyy-MM-dd') }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "bfff5616-471c-47f3-85b4-7b76acf1aaca",
+      "name": "Configuracion",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        9520,
+        1296
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "xlsx",
+        "binaryPropertyName": "attachment_0",
+        "options": {}
+      },
+      "id": "82d5506d-aa84-4d59-872f-d3c5339854ac",
+      "name": "Leer Excel Focuss",
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        9744,
+        1296
+      ],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "content": "## 2. Memoria (Airtable) y calculo\nCruza cada fila de Focuss con el maestro de Articulos (proveedor, precio, vigencia, pedido minimo, OC en curso, novedades). n8n hace TODAS las cuentas: la IA no toca numeros.",
+        "height": 500,
+        "width": 1100,
+        "color": 4
+      },
+      "id": "4da0403e-4813-4a63-8689-1a24411a3adc",
+      "name": "Nota 4",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        9904,
+        1024
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "value": "APP_ID_BASE",
+          "mode": "id"
+        },
+        "table": {
+          "__rl": true,
+          "value": "TBL_ARTICULOS",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "id": "3fa9deac-55b2-4899-acaa-cd9dd009bf49",
+      "name": "Traer maestro de articulos",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        9984,
+        1424
+      ],
+      "executeOnce": true,
+      "credentials": {
+        "airtableTokenApi": {
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "fieldsToMatchString": "Cod",
+        "joinMode": "enrichInput1",
+        "options": {}
+      },
+      "id": "4a3567f8-7e9a-4d32-9242-f2834b50845d",
+      "name": "Cruzar Focuss con maestro",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        10208,
+        1296
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "7ade4c6d-63a8-4059-bf5a-91c98007296b",
+              "name": "fecha_corte",
+              "value": "={{ $('Configuracion').first().json.fecha_corte }}",
+              "type": "string"
+            },
+            {
+              "id": "cd192773-75ab-491a-be17-62e4b716417f",
+              "name": "cod",
+              "value": "={{ String($json.Cod ?? '').trim() }}",
+              "type": "string"
+            },
+            {
+              "id": "34b90c53-6daf-42db-9a69-17d8df69dc42",
+              "name": "nombre",
+              "value": "={{ $json.Nombre ?? '' }}",
+              "type": "string"
+            },
+            {
+              "id": "75a75c7b-d060-45b0-9d34-86159d1f1ddf",
+              "name": "unidad",
+              "value": "={{ $json.Unidad ?? '' }}",
+              "type": "string"
+            },
+            {
+              "id": "9583fcc4-32aa-433e-ac26-68309ecd5013",
+              "name": "semaforo",
+              "value": "={{ String($json.Semaforo ?? '').trim().toUpperCase() }}",
+              "type": "string"
+            },
+            {
+              "id": "eec1dfc4-884f-4856-98fd-ca5ccaed55a3",
+              "name": "en_sitio",
+              "value": "={{ Number($json.Cant_en_sitio) || 0 }}",
+              "type": "number"
+            },
+            {
+              "id": "cdc84298-9f8a-415c-a2b3-2980a0c27f9b",
+              "name": "en_oc_focuss",
+              "value": "={{ Number($json.Cant_en_OC) || 0 }}",
+              "type": "number"
+            },
+            {
+              "id": "d1e9f657-c068-4bf7-a6e4-4e9d32c73d21",
+              "name": "requerida",
+              "value": "={{ Number($json.Cant_requerida_produccion) || 0 }}",
+              "type": "number"
+            },
+            {
+              "id": "5211229b-1354-454a-bf4e-ecfa43a85bab",
+              "name": "amortiguador",
+              "value": "={{ Number($json.Amortiguador) || 0 }}",
+              "type": "number"
+            },
+            {
+              "id": "322d7a64-5809-4be2-9e59-fb53555f3963",
+              "name": "sugerida_texto",
+              "value": "={{ String($json.Cant_sugerida_compra ?? '') }}",
+              "type": "string"
+            },
+            {
+              "id": "b0eede5f-b14f-4163-ab01-afc77772f933",
+              "name": "sugerida",
+              "value": "={{ Number($json.Cant_sugerida_compra) || 0 }}",
+              "type": "number"
+            },
+            {
+              "id": "fba73767-b73c-4b4f-8912-f6d297d4514b",
+              "name": "sugerida_valida",
+              "value": "={{ String($json.Cant_sugerida_compra ?? '').trim() !== '' && !isNaN(Number($json.Cant_sugerida_compra)) }}",
+              "type": "boolean"
+            },
+            {
+              "id": "491399fc-8be2-49d8-9563-803ed67b9459",
+              "name": "articulo_existe",
+              "value": "={{ !!$json.id }}",
+              "type": "boolean"
+            },
+            {
+              "id": "ffbfd57b-fae9-4b0a-915f-9f5303ad1dfa",
+              "name": "articulo_id",
+              "value": "={{ $json.id ?? '' }}",
+              "type": "string"
+            },
+            {
+              "id": "28dbbdd4-10d6-4d5b-b43e-5f87b7643b43",
+              "name": "oc_en_curso",
+              "value": "={{ Number($json['OC en curso']) || 0 }}",
+              "type": "number"
+            },
+            {
+              "id": "8e8f5ed2-c7ab-4c0b-9316-937e3b4405d4",
+              "name": "pedido_minimo",
+              "value": "={{ Number($json['Pedido minimo']) || 1 }}",
+              "type": "number"
+            },
+            {
+              "id": "302d04ab-0cb9-4bff-a288-dede38923e7f",
+              "name": "multiplo",
+              "value": "={{ Number($json.Multiplo) || 1 }}",
+              "type": "number"
+            },
+            {
+              "id": "0cb9fbb3-1f12-496d-97e3-08dccffb3204",
+              "name": "precio",
+              "value": "={{ Number($json['Precio unitario']) || 0 }}",
+              "type": "number"
+            },
+            {
+              "id": "3212703e-0a58-45a6-800b-f0a95f7c1025",
+              "name": "vigencia_precio",
+              "value": "={{ $json['Vigencia precio'] ?? '' }}",
+              "type": "string"
+            },
+            {
+              "id": "48a60792-c3ad-4b5e-80aa-62c6cbc724ac",
+              "name": "proveedor",
+              "value": "={{ ($json['Nombre proveedor'] ?? [])[0] ?? 'SIN PROVEEDOR' }}",
+              "type": "string"
+            },
+            {
+              "id": "ab930f58-e8c0-4eea-aa58-c2ce96834b18",
+              "name": "id_proveedor",
+              "value": "={{ ($json['ID Proveedor'] ?? [])[0] ?? '' }}",
+              "type": "string"
+            },
+            {
+              "id": "070cf5a8-d6c2-404c-ad4c-09b60238addf",
+              "name": "email_proveedor",
+              "value": "={{ ($json['Email proveedor'] ?? [])[0] ?? '' }}",
+              "type": "string"
+            },
+            {
+              "id": "c463f07b-799a-4216-b2de-35c30e726f70",
+              "name": "dias_entrega",
+              "value": "={{ Number(($json['Dias entrega'] ?? [])[0]) || 0 }}",
+              "type": "number"
+            },
+            {
+              "id": "0cbe1fe8-9569-48d1-9d6e-fff8423e23ee",
+              "name": "novedades",
+              "value": "={{ ($json['Novedades vigentes'] ?? []).filter(t => String(t).slice(0, 10) <= $('Configuracion').first().json.fecha_corte).join(' || ') }}",
+              "type": "string"
+            },
+            {
+              "id": "1294dc81-9347-4225-82eb-1458917b509f",
+              "name": "es_lunes",
+              "value": "={{ DateTime.fromISO($('Configuracion').first().json.fecha_corte).weekday === 1 }}",
+              "type": "boolean"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "ccce8c78-07db-4098-a7f9-546cad78fd31",
+      "name": "Limpiar datos",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        10416,
+        1296
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "9d7abf99-3139-4b69-90ae-4a7ac992f250",
+              "name": "neto",
+              "value": "={{ ($json.sugerida - $json.oc_en_curso) }}",
+              "type": "number"
+            },
+            {
+              "id": "5c74eb9e-f1c2-4aa3-b64c-765838c87b25",
+              "name": "estado",
+              "value": "={{ (!$json.articulo_existe || !$json.sugerida_valida) ? 'Error de datos' : ($json.sugerida - $json.oc_en_curso) <= 0 ? 'Cubierta' : ($json.semaforo === 'AMARILLO' && !$json.es_lunes) ? 'En espera semanal' : 'Incluida en OC' }}",
+              "type": "string"
+            },
+            {
+              "id": "ccb6d798-81e9-45f8-aa48-aba00f63d167",
+              "name": "cantidad",
+              "value": "={{ (($json.articulo_existe && $json.sugerida_valida && ($json.sugerida - $json.oc_en_curso) > 0 && !($json.semaforo === 'AMARILLO' && !$json.es_lunes)) ? Math.max($json.pedido_minimo, Math.ceil(($json.sugerida - $json.oc_en_curso) / $json.multiplo) * $json.multiplo) : 0) }}",
+              "type": "number"
+            },
+            {
+              "id": "14fac87d-d0aa-44e2-ae4e-4651c657a81c",
+              "name": "subtotal",
+              "value": "={{ (($json.articulo_existe && $json.sugerida_valida && ($json.sugerida - $json.oc_en_curso) > 0 && !($json.semaforo === 'AMARILLO' && !$json.es_lunes)) ? Math.max($json.pedido_minimo, Math.ceil(($json.sugerida - $json.oc_en_curso) / $json.multiplo) * $json.multiplo) : 0) * $json.precio }}",
+              "type": "number"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "6ea2b44d-9b56-4167-ad63-3f00f3c68fd9",
+      "name": "Calcular linea",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        10640,
+        1296
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "b2e27285-a9e8-4f5a-8a42-e5794adb1564",
+                    "leftValue": "={{ $json.estado }}",
+                    "rightValue": "Error de datos",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Error de datos"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "20448f01-b10a-44fe-a0da-643977c73af0",
+                    "leftValue": "={{ $json.estado }}",
+                    "rightValue": "Incluida en OC",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "A pedir"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra",
+          "renameFallbackOutput": "Cubierta o en espera"
+        }
+      },
+      "id": "7ce9d465-7ddf-42d3-88be-f4bc3b04343a",
+      "name": "Clasificar linea",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        10864,
+        1296
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Camino infeliz: datos malos\nCodigo que no existe en el maestro o cantidad ilegible: se registra en Errores y llega alerta a Telegram. El resto del archivo sigue normal.",
+        "height": 316,
+        "width": 680,
+        "color": 3
+      },
+      "id": "ef02d018-d590-4f5f-86ed-8752291978b5",
+      "name": "Nota 10",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        10800,
+        1632
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "value": "APP_ID_BASE",
+          "mode": "id"
+        },
+        "table": {
+          "__rl": true,
+          "value": "TBL_ERRORES",
+          "mode": "id"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Resumen": "={{ $json.cod ? 'Dato invalido - ' + $json.cod : 'Archivo Focuss ilegible' }}",
+            "Fecha corte": "={{ $('Configuracion').first().json.fecha_corte }}",
+            "Tipo": "={{ !$json.cod ? 'Archivo ilegible' : (!$json.articulo_existe ? 'Codigo no existe en maestro' : 'Cantidad sugerida invalida') }}",
+            "Cod": "={{ $json.cod ?? '' }}",
+            "Detalle": "={{ $json.cod ? 'Codigo ' + $json.cod + ', semaforo ' + $json.semaforo + ', cantidad sugerida recibida: \"' + $json.sugerida_texto + '\"' : ($json.error?.message ?? JSON.stringify($json.error ?? $json)) }}",
+            "Nodo con fallo": "={{ $prevNode.name }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Resumen",
+              "displayName": "Resumen",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Fecha corte",
+              "displayName": "Fecha corte",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Tipo",
+              "displayName": "Tipo",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Cod",
+              "displayName": "Cod",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Detalle",
+              "displayName": "Detalle",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Nodo con fallo",
+              "displayName": "Nodo con fallo",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "id": "d1593e64-a77c-47c0-af85-a3fa03cef8f8",
+      "name": "Registrar error",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        11088,
+        1712
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Configuracion').first().json.telegram_chat_id }}",
+        "text": "=🚨 Corte Focuss {{ $('Configuracion').first().json.fecha_corte }}\n{{ $json.fields.Resumen }} ({{ $json.fields.Tipo }}).\nQuedo registrado en la tabla Errores de Airtable.",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "1efb6fb1-ea63-4ec1-b73a-3878c64b0b6d",
+      "name": "Telegram - Alerta de error",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        11296,
+        1712
+      ],
+      "webhookId": "e84551ef-cdc4-498a-9362-f08c5fce5210",
+      "credentials": {
+        "telegramApi": {
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "value": "APP_ID_BASE",
+          "mode": "id"
+        },
+        "table": {
+          "__rl": true,
+          "value": "TBL_NECESIDADES",
+          "mode": "id"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Linea": "={{ $json.fecha_corte + ' | ' + $json.cod }}",
+            "Fecha corte": "={{ $json.fecha_corte }}",
+            "Articulo": "={{ [ $json.articulo_id ] }}",
+            "Proveedor": "={{ $json.proveedor }}",
+            "ID Proveedor": "={{ $json.id_proveedor }}",
+            "Email proveedor": "={{ $json.email_proveedor }}",
+            "Detalle linea": "={{ $json.cod + ' ' + $json.nombre + ': ' + $json.cantidad.toLocaleString('es-CO') + ' ' + $json.unidad + ' x $' + $json.precio.toLocaleString('es-CO') + ' = $' + $json.subtotal.toLocaleString('es-CO') }}",
+            "Contexto IA": "={{ '- ' + $json.cod + ' ' + $json.nombre + ' | semaforo ' + $json.semaforo + ' | pedir ' + $json.cantidad + ' ' + $json.unidad + ' (Focuss sugiere ' + $json.sugerida + ', OC en curso ' + $json.oc_en_curso + ', requerida produccion ' + $json.requerida + ', amortiguador ' + $json.amortiguador + ') | proveedor entrega en ' + $json.dias_entrega + ' dias | alertas: ' + ([ ($json.vigencia_precio && $json.vigencia_precio < $json.fecha_corte) ? 'Precio vencido desde ' + $json.vigencia_precio : '', ($json.semaforo === 'NEGRO' && $json.dias_entrega > $('Configuracion').first().json.dias_alerta_negro) ? 'NEGRO con proveedor de ' + $json.dias_entrega + ' dias de entrega' : '', ($json.cantidad > 0 && $json.cantidad >= $json.neto * 1.5) ? 'Pedido minimo obliga a comprar ' + $json.cantidad + ' cuando se necesitan ' + $json.neto : '' ].filter(Boolean).join('; ') || 'Sin alertas') + ' | novedades: ' + ($json.novedades || 'ninguna') }}",
+            "Semaforo": "={{ $json.semaforo }}",
+            "En sitio": "={{ $json.en_sitio }}",
+            "En OC Focuss": "={{ $json.en_oc_focuss }}",
+            "Requerida produccion": "={{ $json.requerida }}",
+            "Amortiguador": "={{ $json.amortiguador }}",
+            "Sugerida Focuss": "={{ $json.sugerida }}",
+            "OC en curso descontada": "={{ $json.oc_en_curso }}",
+            "Cantidad a pedir": "={{ $json.cantidad }}",
+            "Precio unitario": "={{ $json.precio }}",
+            "Subtotal": "={{ $json.subtotal }}",
+            "Alertas": "={{ [ ($json.vigencia_precio && $json.vigencia_precio < $json.fecha_corte) ? 'Precio vencido desde ' + $json.vigencia_precio : '', ($json.semaforo === 'NEGRO' && $json.dias_entrega > $('Configuracion').first().json.dias_alerta_negro) ? 'NEGRO con proveedor de ' + $json.dias_entrega + ' dias de entrega' : '', ($json.cantidad > 0 && $json.cantidad >= $json.neto * 1.5) ? 'Pedido minimo obliga a comprar ' + $json.cantidad + ' cuando se necesitan ' + $json.neto : '' ].filter(Boolean).join('; ') || 'Sin alertas' }}",
+            "Novedades": "={{ $json.novedades || 'Sin novedades' }}",
+            "Unidad": "={{ $json.unidad }}",
+            "Estado": "={{ $json.estado }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Linea",
+              "displayName": "Linea",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Fecha corte",
+              "displayName": "Fecha corte",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Articulo",
+              "displayName": "Articulo",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Proveedor",
+              "displayName": "Proveedor",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "ID Proveedor",
+              "displayName": "ID Proveedor",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Email proveedor",
+              "displayName": "Email proveedor",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Detalle linea",
+              "displayName": "Detalle linea",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Contexto IA",
+              "displayName": "Contexto IA",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Semaforo",
+              "displayName": "Semaforo",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "En sitio",
+              "displayName": "En sitio",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "En OC Focuss",
+              "displayName": "En OC Focuss",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Requerida produccion",
+              "displayName": "Requerida produccion",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Amortiguador",
+              "displayName": "Amortiguador",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Sugerida Focuss",
+              "displayName": "Sugerida Focuss",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "OC en curso descontada",
+              "displayName": "OC en curso descontada",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Cantidad a pedir",
+              "displayName": "Cantidad a pedir",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Precio unitario",
+              "displayName": "Precio unitario",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Subtotal",
+              "displayName": "Subtotal",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Alertas",
+              "displayName": "Alertas",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Novedades",
+              "displayName": "Novedades",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Unidad",
+              "displayName": "Unidad",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Estado",
+              "displayName": "Estado",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "id": "a336219d-c34d-4938-b831-4505a20ad446",
+      "name": "Registrar linea sin OC",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        11088,
+        1488
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "value": "APP_ID_BASE",
+          "mode": "id"
+        },
+        "table": {
+          "__rl": true,
+          "value": "TBL_NECESIDADES",
+          "mode": "id"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Linea": "={{ $json.fecha_corte + ' | ' + $json.cod }}",
+            "Fecha corte": "={{ $json.fecha_corte }}",
+            "Articulo": "={{ [ $json.articulo_id ] }}",
+            "Proveedor": "={{ $json.proveedor }}",
+            "ID Proveedor": "={{ $json.id_proveedor }}",
+            "Email proveedor": "={{ $json.email_proveedor }}",
+            "Detalle linea": "={{ $json.cod + ' ' + $json.nombre + ': ' + $json.cantidad.toLocaleString('es-CO') + ' ' + $json.unidad + ' x $' + $json.precio.toLocaleString('es-CO') + ' = $' + $json.subtotal.toLocaleString('es-CO') }}",
+            "Contexto IA": "={{ '- ' + $json.cod + ' ' + $json.nombre + ' | semaforo ' + $json.semaforo + ' | pedir ' + $json.cantidad + ' ' + $json.unidad + ' (Focuss sugiere ' + $json.sugerida + ', OC en curso ' + $json.oc_en_curso + ', requerida produccion ' + $json.requerida + ', amortiguador ' + $json.amortiguador + ') | proveedor entrega en ' + $json.dias_entrega + ' dias | alertas: ' + ([ ($json.vigencia_precio && $json.vigencia_precio < $json.fecha_corte) ? 'Precio vencido desde ' + $json.vigencia_precio : '', ($json.semaforo === 'NEGRO' && $json.dias_entrega > $('Configuracion').first().json.dias_alerta_negro) ? 'NEGRO con proveedor de ' + $json.dias_entrega + ' dias de entrega' : '', ($json.cantidad > 0 && $json.cantidad >= $json.neto * 1.5) ? 'Pedido minimo obliga a comprar ' + $json.cantidad + ' cuando se necesitan ' + $json.neto : '' ].filter(Boolean).join('; ') || 'Sin alertas') + ' | novedades: ' + ($json.novedades || 'ninguna') }}",
+            "Semaforo": "={{ $json.semaforo }}",
+            "En sitio": "={{ $json.en_sitio }}",
+            "En OC Focuss": "={{ $json.en_oc_focuss }}",
+            "Requerida produccion": "={{ $json.requerida }}",
+            "Amortiguador": "={{ $json.amortiguador }}",
+            "Sugerida Focuss": "={{ $json.sugerida }}",
+            "OC en curso descontada": "={{ $json.oc_en_curso }}",
+            "Cantidad a pedir": "={{ $json.cantidad }}",
+            "Precio unitario": "={{ $json.precio }}",
+            "Subtotal": "={{ $json.subtotal }}",
+            "Alertas": "={{ [ ($json.vigencia_precio && $json.vigencia_precio < $json.fecha_corte) ? 'Precio vencido desde ' + $json.vigencia_precio : '', ($json.semaforo === 'NEGRO' && $json.dias_entrega > $('Configuracion').first().json.dias_alerta_negro) ? 'NEGRO con proveedor de ' + $json.dias_entrega + ' dias de entrega' : '', ($json.cantidad > 0 && $json.cantidad >= $json.neto * 1.5) ? 'Pedido minimo obliga a comprar ' + $json.cantidad + ' cuando se necesitan ' + $json.neto : '' ].filter(Boolean).join('; ') || 'Sin alertas' }}",
+            "Novedades": "={{ $json.novedades || 'Sin novedades' }}",
+            "Unidad": "={{ $json.unidad }}",
+            "Estado": "={{ $json.estado }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Linea",
+              "displayName": "Linea",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Fecha corte",
+              "displayName": "Fecha corte",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Articulo",
+              "displayName": "Articulo",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Proveedor",
+              "displayName": "Proveedor",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "ID Proveedor",
+              "displayName": "ID Proveedor",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Email proveedor",
+              "displayName": "Email proveedor",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Detalle linea",
+              "displayName": "Detalle linea",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Contexto IA",
+              "displayName": "Contexto IA",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Semaforo",
+              "displayName": "Semaforo",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "En sitio",
+              "displayName": "En sitio",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "En OC Focuss",
+              "displayName": "En OC Focuss",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Requerida produccion",
+              "displayName": "Requerida produccion",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Amortiguador",
+              "displayName": "Amortiguador",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Sugerida Focuss",
+              "displayName": "Sugerida Focuss",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "OC en curso descontada",
+              "displayName": "OC en curso descontada",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Cantidad a pedir",
+              "displayName": "Cantidad a pedir",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Precio unitario",
+              "displayName": "Precio unitario",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Subtotal",
+              "displayName": "Subtotal",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Alertas",
+              "displayName": "Alertas",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Novedades",
+              "displayName": "Novedades",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Unidad",
+              "displayName": "Unidad",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Estado",
+              "displayName": "Estado",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "id": "6151ba65-bee7-4f62-ab9d-759824e672b2",
+      "name": "Registrar linea a pedir",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        11088,
+        1296
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## 3. IA: revision de cada OC\nUna OC por proveedor. La IA (modelo GPT de OpenAI, gratis via OpenRouter) lee alertas y novedades y recomienda por linea Enviar / Ajustar / Retener, y redacta el correo. Reintenta 3 veces; si falla o responde mal, la OC se crea igual con recomendacion Retener (revision manual) y el fallo queda en Errores.",
+        "height": 700,
+        "width": 1140,
+        "color": 5
+      },
+      "id": "92d3e7e3-2905-483b-9570-0491c52c2122",
+      "name": "Nota 15",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        11248,
+        1024
+      ]
+    },
+    {
+      "parameters": {
+        "fieldsToSummarize": {
+          "values": [
+            {
+              "aggregation": "append",
+              "field": "id"
+            },
+            {
+              "aggregation": "concatenate",
+              "field": "fields.Detalle linea",
+              "separateBy": "other",
+              "customSeparator": "\n"
+            },
+            {
+              "aggregation": "concatenate",
+              "field": "fields.Contexto IA",
+              "separateBy": "other",
+              "customSeparator": "\n"
+            },
+            {
+              "aggregation": "sum",
+              "field": "fields.Subtotal"
+            },
+            {
+              "aggregation": "append",
+              "field": "fields.Semaforo"
+            }
+          ]
+        },
+        "fieldsToSplitBy": "fields.Proveedor, fields.ID Proveedor, fields.Email proveedor, fields.Fecha corte",
+        "options": {}
+      },
+      "id": "ea7c5b0d-492a-47f5-9fa1-1c2fdbe0295a",
+      "name": "Agrupar por proveedor",
+      "type": "n8n-nodes-base.summarize",
+      "typeVersion": 1.1,
+      "position": [
+        11296,
+        1296
+      ]
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "openrouter/free",
+          "mode": "id"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "Actua como analista senior de compras de una planta de alimentos en polvo. Recibes el borrador de una orden de compra (OC) para un proveedor, armado automaticamente a partir del reporte diario de Focuss. Las cantidades ya fueron calculadas y redondeadas por el sistema: NO las recalcules ni propongas cifras inventadas.\n\nTu trabajo es revisar cada linea con criterio de negocio, usando sus alertas y las novedades registradas por Planeacion, Produccion, Calidad e I+D, y recomendar una accion por linea:\n- Enviar: la linea esta bien y se puede pedir tal cual.\n- Ajustar: se debe pedir, pero hay que cambiar algo (cantidad, entrega parcial urgente, pedir certificado, confirmar precio). Di que ajustar.\n- Retener: no se debe pedir todavia (por ejemplo reformulacion, presentacion que sale del portafolio o precio vencido sin confirmar).\n\nReglas:\n1. Usa solo la informacion entregada. No inventes datos.\n2. Semaforo NEGRO = urgencia maxima, ROJO = urgencia alta, AMARILLO = reposicion semanal del amortiguador.\n3. Si una linea no tiene alertas ni novedades, recomienda Enviar.\n4. La recomendacion de la OC completa es la mas restrictiva de sus lineas: Retener > Ajustar > Enviar.\n5. El correo al proveedor es cordial, en espanol, de maximo 120 palabras, sin precios ni cantidades (el detalle se adjunta aparte) y menciona la urgencia y las condiciones especiales que apliquen (entrega parcial, certificado de analisis, etc.). No menciones novedades internas.\n6. Las cantidades ya son correctas: Focuss calcula la sugerida como requerida produccion + amortiguador - en sitio - en OC, y el sistema solo la redondea al multiplo o pedido minimo. NUNCA recomiendes Ajustar por cantidad ni compares contra la requerida de produccion. Ajustar o Retener solo aplican por las alertas o novedades listadas; sin ellas, Enviar.\n\nPiensa paso a paso antes de responder: primero revisa cada linea, luego decide la recomendacion general y al final redacta el correo.\n\nResponde UNICAMENTE con un objeto JSON valido, sin texto antes ni despues, con exactamente estas claves:\n{\"recomendacion_oc\": \"Enviar | Ajustar | Retener\", \"analisis\": \"2 o 3 frases\", \"recomendaciones_lineas\": \"una linea por articulo con el formato COD: Accion - razon\", \"cuerpo_correo\": \"texto del correo\"}",
+              "role": "system"
+            },
+            {
+              "content": "=Fecha de corte: {{ $json.fields_Fecha_corte }}\nProveedor: {{ $json.fields_Proveedor }}\nFirma del correo: {{ $('Configuracion').first().json.empresa }}\n\nLineas del borrador de OC:\n{{ $json.concatenated_fields_Contexto_IA }}"
+            }
+          ]
+        },
+        "jsonOutput": true,
+        "options": {
+          "maxTokens": 2000,
+          "temperature": 0.2
+        }
+      },
+      "id": "6eb0c765-47e3-44c6-b693-f9347e9eb90e",
+      "name": "IA - Revisar OC",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        11520,
+        1296
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "credentials": {
+        "openAiApi": {
+          "name": "OpenAI account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "7e73e16d-7489-4753-a010-4cc5ca25fdf4",
+              "name": "proveedor",
+              "value": "={{ $('Agrupar por proveedor').item.json.fields_Proveedor }}",
+              "type": "string"
+            },
+            {
+              "id": "3dba9ef3-e3a0-4ed4-bacb-6977f22a8ea9",
+              "name": "id_proveedor",
+              "value": "={{ $('Agrupar por proveedor').item.json.fields_ID_Proveedor }}",
+              "type": "string"
+            },
+            {
+              "id": "3b7ae9f3-6799-46af-9705-be29564fe7c9",
+              "name": "email_proveedor",
+              "value": "={{ $('Agrupar por proveedor').item.json.fields_Email_proveedor }}",
+              "type": "string"
+            },
+            {
+              "id": "0b21ed57-8f59-42f2-93d5-f6f2cd1061e9",
+              "name": "fecha_corte",
+              "value": "={{ $('Agrupar por proveedor').item.json.fields_Fecha_corte }}",
+              "type": "string"
+            },
+            {
+              "id": "d1fd2515-8e40-41d5-bde0-a645c17d9225",
+              "name": "lineas_ids",
+              "value": "={{ $('Agrupar por proveedor').item.json.appended_id }}",
+              "type": "array"
+            },
+            {
+              "id": "eded2dbc-3a5d-401e-ad33-7af009cca891",
+              "name": "detalle",
+              "value": "={{ $('Agrupar por proveedor').item.json.concatenated_fields_Detalle_linea }}",
+              "type": "string"
+            },
+            {
+              "id": "489f39bc-a5c6-4468-b898-2850a6d232d6",
+              "name": "subtotal",
+              "value": "={{ $('Agrupar por proveedor').item.json.sum_fields_Subtotal }}",
+              "type": "number"
+            },
+            {
+              "id": "0b688f3a-0bd4-4bb2-a274-cf00a22c225d",
+              "name": "semaforos",
+              "value": "={{ $('Agrupar por proveedor').item.json.appended_fields_Semaforo }}",
+              "type": "array"
+            },
+            {
+              "id": "4f8406c0-aa73-47f1-b0ac-714207f03ddf",
+              "name": "ia_ok",
+              "value": "={{ (() => { try { const c = $json.message?.content; const t = typeof c === 'string' ? c : ''; const o = (c && typeof c === 'object') ? c : JSON.parse(t.slice(t.indexOf('{'), t.lastIndexOf('}') + 1)); const txt = (v) => Array.isArray(v) ? v.map(x => typeof x === 'string' ? x : JSON.stringify(x)).join('\\n') : (typeof v === 'string' ? v : JSON.stringify(v ?? '')); return (o.recomendacion_oc && o.cuerpo_correo) ? true : false; } catch (e) { return false; } })() }}",
+              "type": "boolean"
+            },
+            {
+              "id": "489b723c-20ec-4f01-9749-d416d77b4af9",
+              "name": "ia_recomendacion",
+              "value": "={{ (() => { try { const c = $json.message?.content; const t = typeof c === 'string' ? c : ''; const o = (c && typeof c === 'object') ? c : JSON.parse(t.slice(t.indexOf('{'), t.lastIndexOf('}') + 1)); const txt = (v) => Array.isArray(v) ? v.map(x => typeof x === 'string' ? x : JSON.stringify(x)).join('\\n') : (typeof v === 'string' ? v : JSON.stringify(v ?? '')); return (o.recomendacion_oc && o.cuerpo_correo) ? txt(o.recomendacion_oc) : 'Retener'; } catch (e) { return 'Retener'; } })() }}",
+              "type": "string"
+            },
+            {
+              "id": "1e4785d2-6bf7-4889-90f2-8b174929d944",
+              "name": "ia_analisis",
+              "value": "={{ (() => { try { const c = $json.message?.content; const t = typeof c === 'string' ? c : ''; const o = (c && typeof c === 'object') ? c : JSON.parse(t.slice(t.indexOf('{'), t.lastIndexOf('}') + 1)); const txt = (v) => Array.isArray(v) ? v.map(x => typeof x === 'string' ? x : JSON.stringify(x)).join('\\n') : (typeof v === 'string' ? v : JSON.stringify(v ?? '')); return (o.recomendacion_oc && o.cuerpo_correo) ? txt(o.analisis) : 'La IA no estuvo disponible (quedo registrado en la tabla Errores). Revisar esta OC manualmente antes de aprobarla.'; } catch (e) { return 'La IA no estuvo disponible (quedo registrado en la tabla Errores). Revisar esta OC manualmente antes de aprobarla.'; } })() }}",
+              "type": "string"
+            },
+            {
+              "id": "cd99c7f2-9e67-42c8-baa6-aba85d36c825",
+              "name": "ia_lineas",
+              "value": "={{ (() => { try { const c = $json.message?.content; const t = typeof c === 'string' ? c : ''; const o = (c && typeof c === 'object') ? c : JSON.parse(t.slice(t.indexOf('{'), t.lastIndexOf('}') + 1)); const txt = (v) => Array.isArray(v) ? v.map(x => typeof x === 'string' ? x : JSON.stringify(x)).join('\\n') : (typeof v === 'string' ? v : JSON.stringify(v ?? '')); return (o.recomendacion_oc && o.cuerpo_correo) ? txt(o.recomendaciones_lineas) : 'REVISION MANUAL: la IA no respondio. Revisa estas alertas y novedades antes de aprobar:\\n' + $('Agrupar por proveedor').item.json.concatenated_fields_Contexto_IA; } catch (e) { return 'REVISION MANUAL: la IA no respondio. Revisa estas alertas y novedades antes de aprobar:\\n' + $('Agrupar por proveedor').item.json.concatenated_fields_Contexto_IA; } })() }}",
+              "type": "string"
+            },
+            {
+              "id": "8fae74d8-647b-480e-875b-1f464b4b6c88",
+              "name": "ia_correo",
+              "value": "={{ (() => { try { const c = $json.message?.content; const t = typeof c === 'string' ? c : ''; const o = (c && typeof c === 'object') ? c : JSON.parse(t.slice(t.indexOf('{'), t.lastIndexOf('}') + 1)); const txt = (v) => Array.isArray(v) ? v.map(x => typeof x === 'string' ? x : JSON.stringify(x)).join('\\n') : (typeof v === 'string' ? v : JSON.stringify(v ?? '')); return (o.recomendacion_oc && o.cuerpo_correo) ? txt(o.cuerpo_correo) : 'Cordial saludo.\\n\\nAdjuntamos la orden de compra con el detalle de los materiales requeridos. Agradecemos confirmar disponibilidad y fecha de entrega.\\n\\nQuedamos atentos.\\n' + $('Configuracion').first().json.empresa; } catch (e) { return 'Cordial saludo.\\n\\nAdjuntamos la orden de compra con el detalle de los materiales requeridos. Agradecemos confirmar disponibilidad y fecha de entrega.\\n\\nQuedamos atentos.\\n' + $('Configuracion').first().json.empresa; } })() }}",
+              "type": "string"
+            },
+            {
+              "id": "b7828f8d-028e-4c27-9c65-a3fa506b731d",
+              "name": "ia_error",
+              "value": "={{ $json.error ? (typeof $json.error === 'string' ? $json.error : ($json.error.message || JSON.stringify($json.error))) : ('Respuesta de la IA sin JSON valido: ' + (typeof $json.message?.content === 'string' ? $json.message.content : JSON.stringify($json.message?.content ?? 'vacia')).slice(0, 300)) }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "393c671c-cd17-4602-8924-5ed418afbaca",
+      "name": "Leer respuesta IA",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        11744,
+        1296
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "e3466ca2-2281-4fd4-b942-41bec7f92eb6",
+              "leftValue": "={{ $json.ia_ok }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "false",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "a4a0b858-1a64-4f82-ad65-1f15c8b2bba6",
+      "name": "IA fallo?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        11968,
+        1552
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "value": "APP_ID_BASE",
+          "mode": "id"
+        },
+        "table": {
+          "__rl": true,
+          "value": "TBL_ERRORES",
+          "mode": "id"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Resumen": "={{ 'IA no disponible - ' + $json.proveedor }}",
+            "Fecha corte": "={{ $json.fecha_corte }}",
+            "Tipo": "Fallo de IA",
+            "Cod": "",
+            "Detalle": "={{ $json.ia_error }}",
+            "Nodo con fallo": "IA - Revisar OC"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Resumen",
+              "displayName": "Resumen",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Fecha corte",
+              "displayName": "Fecha corte",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Tipo",
+              "displayName": "Tipo",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Cod",
+              "displayName": "Cod",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Detalle",
+              "displayName": "Detalle",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Nodo con fallo",
+              "displayName": "Nodo con fallo",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "id": "5e56192e-23e2-4469-a466-83c4dd124679",
+      "name": "Registrar error IA",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        12176,
+        1552
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## 4. Registro y Human-in-the-loop\nSe crea cada OC en Airtable en estado **En revision**. Nada sale al proveedor sin tu aprobacion.",
+        "height": 500,
+        "width": 940,
+        "color": 6
+      },
+      "id": "50092a1d-6351-4047-a6fc-cacb6d9f3633",
+      "name": "Nota 21",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        12128,
+        1024
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "value": "APP_ID_BASE",
+          "mode": "id"
+        },
+        "table": {
+          "__rl": true,
+          "value": "TBL_OC",
+          "mode": "id"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "OC": "={{ 'OC-' + $json.fecha_corte.replaceAll('-', '') + '-' + $json.id_proveedor }}",
+            "Fecha corte": "={{ $json.fecha_corte }}",
+            "Proveedor": "={{ [ $json.proveedor ] }}",
+            "Nombre proveedor": "={{ $json.proveedor }}",
+            "Email proveedor": "={{ $json.email_proveedor }}",
+            "Urgencia": "={{ $json.semaforos.includes('NEGRO') ? 'NEGRO' : ($json.semaforos.includes('ROJO') ? 'ROJO' : 'AMARILLO') }}",
+            "Lineas": "={{ $json.lineas_ids }}",
+            "Detalle": "={{ $json.detalle }}",
+            "Subtotal": "={{ $json.subtotal }}",
+            "IVA": "={{ Math.round($json.subtotal * $('Configuracion').first().json.iva) }}",
+            "Total": "={{ $json.subtotal + Math.round($json.subtotal * $('Configuracion').first().json.iva) }}",
+            "Recomendacion IA": "={{ $json.ia_recomendacion }}",
+            "Analisis IA": "={{ $json.ia_analisis }}",
+            "Recomendaciones por linea": "={{ $json.ia_lineas }}",
+            "Asunto correo": "={{ 'Orden de compra ' + 'OC-' + $json.fecha_corte.replaceAll('-', '') + '-' + $json.id_proveedor + ' - ' + $('Configuracion').first().json.empresa }}",
+            "Cuerpo correo": "={{ $json.ia_correo }}",
+            "Estado": "En revision"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "OC",
+              "displayName": "OC",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Fecha corte",
+              "displayName": "Fecha corte",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Proveedor",
+              "displayName": "Proveedor",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Nombre proveedor",
+              "displayName": "Nombre proveedor",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Email proveedor",
+              "displayName": "Email proveedor",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Urgencia",
+              "displayName": "Urgencia",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Lineas",
+              "displayName": "Lineas",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Detalle",
+              "displayName": "Detalle",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Subtotal",
+              "displayName": "Subtotal",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "IVA",
+              "displayName": "IVA",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Total",
+              "displayName": "Total",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Recomendacion IA",
+              "displayName": "Recomendacion IA",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Analisis IA",
+              "displayName": "Analisis IA",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Recomendaciones por linea",
+              "displayName": "Recomendaciones por linea",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Asunto correo",
+              "displayName": "Asunto correo",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Cuerpo correo",
+              "displayName": "Cuerpo correo",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Estado",
+              "displayName": "Estado",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "id": "5b39b9c9-537d-4ab8-bb5c-6aff4d52905c",
+      "name": "Crear OC",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        12176,
+        1296
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "63ebed7a-41a2-4c15-8c79-c11555b0e15a",
+      "name": "Una OC a la vez",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        12400,
+        1296
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 5. Human-in-the-loop + envio\nPor cada OC te llega un correo con el analisis de la IA y los botones **Aprobar y enviar / Rechazar**. El flujo se PAUSA hasta tu clic (maximo 24 h; sin respuesta = Rechazada). Aprobada: sale el correo al proveedor y se guarda el Thread ID. Si Gmail falla: registro en Errores y la OC queda en Error de envio.",
+        "height": 760,
+        "width": 1600,
+        "color": 6
+      },
+      "id": "77ee8614-e1fe-40fd-8230-609d280d7365",
+      "name": "Nota 24",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        12560,
+        1024
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "sendAndWait",
+        "sendTo": "={{ $('Configuracion').first().json.correo_aprobador }}",
+        "subject": "=[Aprobar] {{ $json.fields.OC }} - {{ $json.fields['Nombre proveedor'] }} - IA: {{ $json.fields['Recomendacion IA'] }}",
+        "message": "=Orden de compra {{ $json.fields.OC }} lista para revision.\n\nProveedor: {{ $json.fields['Nombre proveedor'] }} <{{ $json.fields['Email proveedor'] }}>\nUrgencia: {{ $json.fields.Urgencia }}\nTotal con IVA: ${{ Number($json.fields.Total).toLocaleString('es-CO') }}\n\nRECOMENDACION DE LA IA: {{ $json.fields['Recomendacion IA'] }}\n{{ $json.fields['Analisis IA'] }}\n\nPor linea:\n{{ $json.fields['Recomendaciones por linea'] }}\n\n----- DETALLE -----\n{{ $json.fields.Detalle }}\n\n----- CORREO QUE SE ENVIARA AL PROVEEDOR -----\nAsunto: {{ $json.fields['Asunto correo'] }}\n\n{{ $json.fields['Cuerpo correo'] }}\n\nSi apruebas, se envia al proveedor. Si rechazas, no se envia nada y la OC queda Rechazada.",
+        "approvalOptions": {
+          "values": {
+            "approvalType": "double",
+            "approveLabel": "Aprobar y enviar",
+            "disapproveLabel": "Rechazar"
+          }
+        },
+        "options": {
+          "limitWaitTime": {
+            "values": {
+              "resumeAmount": 24
+            }
+          }
+        }
+      },
+      "id": "72a0a06e-59bc-467e-ac70-ada71be01714",
+      "name": "Gmail - Pedir aprobacion",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        12624,
+        1296
+      ],
+      "webhookId": "e92ac7e7-fbf5-448f-93d0-f2a51ce614a6",
+      "credentials": {
+        "gmailOAuth2": {
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "35f2717a-35dd-4cdb-9d41-b74d2ad0e44e",
+              "leftValue": "={{ $json.data?.approved }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "1f2a0a05-2f64-45f7-9d68-8945dae95ca2",
+      "name": "Aprobada?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        12848,
+        1296
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Una OC a la vez').first().json.fields['Email proveedor'] }}",
+        "subject": "={{ $('Una OC a la vez').first().json.fields['Asunto correo'] }}",
+        "emailType": "text",
+        "message": "={{ $('Una OC a la vez').first().json.fields['Cuerpo correo'] }}\n\n------------------------------\nDETALLE DE LA ORDEN {{ $('Una OC a la vez').first().json.fields.OC }}\n------------------------------\n{{ $('Una OC a la vez').first().json.fields.Detalle }}\n\nSubtotal: ${{ Number($('Una OC a la vez').first().json.fields.Subtotal).toLocaleString('es-CO') }}\nIVA 19%: ${{ Number($('Una OC a la vez').first().json.fields.IVA).toLocaleString('es-CO') }}\nTOTAL: ${{ Number($('Una OC a la vez').first().json.fields.Total).toLocaleString('es-CO') }}\n\nFavor confirmar recibido y fecha de entrega respondiendo a este correo.",
+        "options": {
+          "appendAttribution": false,
+          "ccList": "={{ $('Configuracion').first().json.correo_aprobador }}"
+        }
+      },
+      "id": "27b43cb8-8dde-42ae-bcbf-a4d05f9bee68",
+      "name": "Gmail - Enviar OC al proveedor",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        13056,
+        1168
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "webhookId": "1a72de69-4fd4-4257-b3e4-f6acba21856f",
+      "credentials": {
+        "gmailOAuth2": {
+          "name": "Gmail account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "value": "APP_ID_BASE",
+          "mode": "id"
+        },
+        "table": {
+          "__rl": true,
+          "value": "TBL_ERRORES",
+          "mode": "id"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Resumen": "={{ 'Error enviando ' + $('Una OC a la vez').first().json.fields.OC }}",
+            "Fecha corte": "={{ $('Una OC a la vez').first().json.fields['Fecha corte'] }}",
+            "Tipo": "Fallo de envio Gmail",
+            "Cod": "",
+            "Detalle": "={{ $json.error ? (typeof $json.error === 'string' ? $json.error : ($json.error.message || JSON.stringify($json.error))) : 'Error sin detalle' }}",
+            "Nodo con fallo": "Gmail - Enviar OC al proveedor"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Resumen",
+              "displayName": "Resumen",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Fecha corte",
+              "displayName": "Fecha corte",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Tipo",
+              "displayName": "Tipo",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Cod",
+              "displayName": "Cod",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Detalle",
+              "displayName": "Detalle",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Nodo con fallo",
+              "displayName": "Nodo con fallo",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "id": "e1e7d0c7-b219-4bce-bdcb-8db4f08084c2",
+      "name": "Registrar error de envio",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        13280,
+        1536
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "value": "APP_ID_BASE",
+          "mode": "id"
+        },
+        "table": {
+          "__rl": true,
+          "value": "TBL_OC",
+          "mode": "id"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{ $('Una OC a la vez').first().json.id }}",
+            "Estado": "={{ $json.threadId ? 'Enviada' : ($json.fields?.Tipo === 'Fallo de envio Gmail' ? 'Error de envio' : 'Rechazada') }}",
+            "Gmail Thread ID": "={{ $json.threadId ?? '' }}",
+            "Fecha envio": "={{ $json.threadId ? $now.toISO() : null }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": false
+            },
+            {
+              "id": "Estado",
+              "displayName": "Estado",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Gmail Thread ID",
+              "displayName": "Gmail Thread ID",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Fecha envio",
+              "displayName": "Fecha envio",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "id": "a0c026b3-84e5-43b1-8825-70a69758a7da",
+      "name": "Actualizar estado OC",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        13504,
+        1296
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Configuracion').first().json.telegram_chat_id }}",
+        "text": "={{ $json.fields.Estado === 'Enviada' ? '✅' : ($json.fields.Estado === 'Rechazada' ? '❌' : '🚨') }} {{ $('Una OC a la vez').first().json.fields.OC }} - {{ $('Una OC a la vez').first().json.fields['Nombre proveedor'] }}: {{ $json.fields.Estado }}\nTotal: ${{ Number($('Una OC a la vez').first().json.fields.Total).toLocaleString('es-CO') }}{{ $json.fields.Estado === 'Enviada' ? '\\nRecuerda registrarla en SAP y marcar la casilla Registrada en SAP.' : '' }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "def96a05-89a4-4495-98fb-eee5d5e081a6",
+      "name": "Telegram - Resultado de la OC",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        13728,
+        1296
+      ],
+      "webhookId": "61758323-ddbb-42ad-9592-1130e806694d",
+      "credentials": {
+        "telegramApi": {
+          "name": "Telegram account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Gmail - Llega reporte Focuss": {
+      "main": [
+        [
+          {
+            "node": "Configuracion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Configuracion": {
+      "main": [
+        [
+          {
+            "node": "Leer Excel Focuss",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leer Excel Focuss": {
+      "main": [
+        [
+          {
+            "node": "Cruzar Focuss con maestro",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Traer maestro de articulos",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Registrar error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Traer maestro de articulos": {
+      "main": [
+        [
+          {
+            "node": "Cruzar Focuss con maestro",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Cruzar Focuss con maestro": {
+      "main": [
+        [
+          {
+            "node": "Limpiar datos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limpiar datos": {
+      "main": [
+        [
+          {
+            "node": "Calcular linea",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calcular linea": {
+      "main": [
+        [
+          {
+            "node": "Clasificar linea",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clasificar linea": {
+      "main": [
+        [
+          {
+            "node": "Registrar error",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Registrar linea a pedir",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Registrar linea sin OC",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Registrar error": {
+      "main": [
+        [
+          {
+            "node": "Telegram - Alerta de error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Registrar linea a pedir": {
+      "main": [
+        [
+          {
+            "node": "Agrupar por proveedor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agrupar por proveedor": {
+      "main": [
+        [
+          {
+            "node": "IA - Revisar OC",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IA - Revisar OC": {
+      "main": [
+        [
+          {
+            "node": "Leer respuesta IA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leer respuesta IA": {
+      "main": [
+        [
+          {
+            "node": "IA fallo?",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Crear OC",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IA fallo?": {
+      "main": [
+        [
+          {
+            "node": "Registrar error IA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Crear OC": {
+      "main": [
+        [
+          {
+            "node": "Una OC a la vez",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Una OC a la vez": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Gmail - Pedir aprobacion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail - Pedir aprobacion": {
+      "main": [
+        [
+          {
+            "node": "Aprobada?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aprobada?": {
+      "main": [
+        [
+          {
+            "node": "Gmail - Enviar OC al proveedor",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Actualizar estado OC",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail - Enviar OC al proveedor": {
+      "main": [
+        [
+          {
+            "node": "Actualizar estado OC",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Registrar error de envio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Registrar error de envio": {
+      "main": [
+        [
+          {
+            "node": "Actualizar estado OC",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Actualizar estado OC": {
+      "main": [
+        [
+          {
+            "node": "Telegram - Resultado de la OC",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram - Resultado de la OC": {
+      "main": [
+        [
+          {
+            "node": "Una OC a la vez",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "nodeGroups": []
+}

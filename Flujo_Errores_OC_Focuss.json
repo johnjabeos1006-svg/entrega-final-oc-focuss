@@ -1,0 +1,189 @@
+{
+  "name": "Flujo de errores - OC Focuss",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Flujo de errores (Error Workflow)\nn8n lo ejecuta automaticamente cuando el flujo principal **se detiene por una falla no controlada** (por ejemplo, Airtable no responde). Registra la falla en la tabla Errores y avisa por Telegram para revision manual.\nSe conecta en el flujo principal: Settings > Error workflow.",
+        "height": 300,
+        "width": 760,
+        "color": 3
+      },
+      "id": "95e7aed1-1507-4a89-924c-6b8642bc8ef7",
+      "name": "Nota",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -60,
+        -220
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "7e34ddd4-c392-4b91-899a-a90ef1596bbd",
+      "name": "Error Trigger",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "value": "APP_ID_BASE",
+          "mode": "id"
+        },
+        "table": {
+          "__rl": true,
+          "value": "TBL_ERRORES",
+          "mode": "id"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Resumen": "={{ 'Falla general del flujo - ' + ($json.workflow?.name ?? '') }}",
+            "Fecha corte": "={{ $now.setZone('America/Bogota').toFormat('yyyy-MM-dd') }}",
+            "Tipo": "Falla general del flujo",
+            "Cod": "",
+            "Detalle": "={{ ($json.execution?.error?.message ?? 'Sin mensaje') + ' | Ejecucion: ' + ($json.execution?.url ?? $json.execution?.id ?? '') }}",
+            "Nodo con fallo": "={{ $json.execution?.lastNodeExecuted ?? 'desconocido' }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Resumen",
+              "displayName": "Resumen",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Fecha corte",
+              "displayName": "Fecha corte",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Tipo",
+              "displayName": "Tipo",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Cod",
+              "displayName": "Cod",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Detalle",
+              "displayName": "Detalle",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Nodo con fallo",
+              "displayName": "Nodo con fallo",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "id": "16aba560-7ba2-4f17-9b58-35d9f1bba740",
+      "name": "Registrar falla del flujo",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        240,
+        100
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "chatId": "PEGAR_AQUI_CHAT_ID",
+        "text": "=🔴 FALLA GENERAL en el flujo \"{{ $('Error Trigger').first().json.workflow?.name }}\"\nNodo: {{ $('Error Trigger').first().json.execution?.lastNodeExecuted ?? 'desconocido' }}\nError: {{ $('Error Trigger').first().json.execution?.error?.message ?? 'sin mensaje' }}\nRevisa la ejecucion: {{ $('Error Trigger').first().json.execution?.url ?? '' }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "d850ea26-85bd-4d21-87f5-bcdf9cf754e1",
+      "name": "Telegram - Aviso de falla",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        480,
+        100
+      ]
+    }
+  ],
+  "connections": {
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Registrar falla del flujo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Registrar falla del flujo": {
+      "main": [
+        [
+          {
+            "node": "Telegram - Aviso de falla",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/Bogota"
+  },
+  "tags": []
+}
