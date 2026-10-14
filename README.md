@@ -32,7 +32,7 @@ Un flujo en **n8n** recibe por correo el reporte diario de Focuss (artículos qu
 - Dashboard OC – vista compartida agrupada por estado: https://airtable.com/appeVxftYSK1dP9mN/shrgSEiZcZ0yWIO8U
 - Dashboard Errores – vista compartida agrupada por tipo: https://airtable.com/appeVxftYSK1dP9mN/shrrbbOxrb7Cqnocl
 - Capturas de evidencia: carpeta `capturas/`
-- Video demo (3 min): [pegar enlace]
+- Video demo (3 min):https://youtu.be/B2VuwMSNQBc
 
 ## Cómo ejecutarlo
 
