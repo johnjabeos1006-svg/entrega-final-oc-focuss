@@ -2,6 +2,8 @@
 
 Proyecto final del curso **Ecosistema de Automatización IA** (Coderhouse).
 
+Video: https://youtu.be/B2VuwMSNQBc
+
 Un flujo en **n8n** recibe por correo el reporte diario de Focuss (artículos que requieren compra, con semáforo negro / rojo / amarillo). Lo cruza con el maestro de artículos en **Airtable** y calcula cuánto pedir a cada proveedor. Después, la **IA (modelos gratuitos vía OpenRouter)** revisa cada orden de compra contra alertas y novedades escritas por otras áreas. Ninguna OC sale al proveedor sin **aprobación humana** por **Gmail**, y los resultados se notifican por **Telegram**.
 
 ## Arquitectura
